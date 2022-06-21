@@ -44,9 +44,11 @@ function trapFocus(container, elementToFocus = container) {
 
   trapFocusHandlers.focusout = function() {
     document.removeEventListener('keydown', trapFocusHandlers.keydown);
+    // console.log(2)
   };
 
   trapFocusHandlers.keydown = function(event) {
+    console.log(3)
     if (event.code.toUpperCase() !== 'TAB') return; // If not TAB key
     // On the last focusable element and tab forward, focus the first element.
     if (event.target === last && !event.shiftKey) {
@@ -834,6 +836,10 @@ class VariantSelects extends HTMLElement {
   }
 
   renderProductInfo() {
+    console.log(this.dataset.url);
+    console.log(this.currentVariant.id);
+    console.log(this.dataset.originalSection);
+    console.log(this.dataset.section);
     fetch(`${this.dataset.url}?variant=${this.currentVariant.id}&section_id=${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`)
       .then((response) => response.text())
       .then((responseText) => {
@@ -899,3 +905,106 @@ class VariantRadios extends VariantSelects {
 }
 
 customElements.define('variant-radios', VariantRadios);
+
+
+//CUSTOM
+const addToCartCustom = document.querySelectorAll(".add-to-cart");
+let allSelectors = document.querySelectorAll(".product-options");
+let cartItems = document.querySelectorAll('tr.cart-item');
+let productIds = [];
+
+calculateDiscount();
+setPriceOnButton();
+
+fetch(`/products/eye-stick-3-pack?variant=42032274604221&section_id=template--15656100724925__main`)
+.then((response) => response.text())
+.then((responseText) => {
+  const html = new DOMParser().parseFromString(responseText, 'text/html')
+  const destination = document.getElementById(`price-quickadd-template--15656100724925__main`);
+  const source = html.getElementById(`price-template--15656100724925__main`);
+  if (source && destination) destination.innerHTML = source.innerHTML;
+
+  const price = document.getElementById(`price-quickadd-template--15656100724925__main`);
+
+  if (price) price.classList.remove('visibility-hidden');
+  this.toggleAddButton('42032274636989'.available, window.variantStrings.soldOut);
+});
+
+
+addToCartCustom.forEach(button =>  {
+  button.addEventListener("click", () => {
+    let productId = button.parentNode.querySelector(".form-options .product-options").value;
+    let formData = {
+      'items': [{
+        'id': `${productId}`,
+        'quantity': 1
+        }]
+      };
+
+    fetch(window.Shopify.routes.root + 'cart/add.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(formData)
+    })
+    .then(response => {
+      reactionAfterAdded();
+      return response.json();
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  })
+
+  function reactionAfterAdded() {
+    button.classList.add('successfullyAdded');
+    setTimeout(function(){
+      button.classList.remove('successfullyAdded');
+    }, 1500 );
+  }
+})
+
+function calculateDiscount () {
+  let discounts = document.querySelectorAll(".product-options");
+
+  discounts.forEach(discount => {
+    let selectedOption = discount.selectedIndex;
+    let maxPrice = +(discount.querySelectorAll("option")[`${selectedOption}`].getAttribute('data-price').trim());
+    let minPrice = +(discount.querySelectorAll("option")[`${selectedOption}`].getAttribute('data-compare-at-price').trim());
+
+    if(maxPrice && minPrice) {
+      let discountBlock = discount.parentNode.querySelector('.discount');
+      let generalDiscount = Math.floor(100 * minPrice / maxPrice);
+      let showDiscount = `${generalDiscount} %`
+
+      discountBlock.classList.remove('no-active');
+      discountBlock.querySelector("p").innerHTML = showDiscount;
+    }
+  })
+}
+
+function setPriceOnButton() {
+  let buttons = document.querySelectorAll("#feature-product-custom .add-to-cart");
+
+  buttons.forEach(button => {
+    let select = button.parentNode.querySelector('.product-options');
+    let selectedOption = select.selectedIndex;
+    let price = select.querySelectorAll("option")[`${selectedOption}`].getAttribute('data-price');
+    let formattedPrice = price.slice(0, -2);
+
+    button.innerHTML = `Add to cart - ${formattedPrice}$`;
+  })
+}
+
+allSelectors.forEach(selector => {
+  selector.addEventListener('change', (event) => {
+   calculateDiscount ();
+   setPriceOnButton();
+  });
+})
+
+cartItems.forEach(cartItem => {
+  let productId = cartItem.getAttribute("data-id");
+  productIds.push(productId);
+});

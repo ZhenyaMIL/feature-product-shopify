@@ -80,7 +80,7 @@
 }
 
 /* CUSTOM STYLE */
-.collection__title .title.h2 {
+#feature-product-custom .collection__title .title.h2 {
   text-align: center;
   color: #656874;
   font-size: 42px;

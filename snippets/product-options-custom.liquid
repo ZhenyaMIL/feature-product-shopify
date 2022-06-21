@@ -1,0 +1,17 @@
+<form class = 'form-options' action="/cart/add" method="post" style="text-align:center;">
+  <div class="select-and-discount">
+    <select name="id" class="product-options {% if product.variants.size > 1 %}active{% endif %}">
+      {% for variant in product.variants %}
+        {% if product.variants.size > 1 %}
+          <option  data-price="{{ variant.price }}" data-compare-at-price="{{ variant.compare_at_price }}" value="{{ variant.id }}">{{ variant.title }}</option>
+        {% else %}
+          <option data-price="{{ variant.price }}" data-compare-at-price="{{ variant.compare_at_price }}" value="{{ variant.id }}"></option>
+        {% endif %}
+      {% endfor %}
+      </select>
+      <div class="discount no-active">
+        <p></p>
+      </div>
+  </div>
+</form>
+<button class="add-to-cart">Add to cart</button>
